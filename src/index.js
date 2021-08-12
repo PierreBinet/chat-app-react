@@ -4,51 +4,7 @@ import './index.css';
 import reportWebVitals from './reportWebVitals';
 import {ApolloClient, InMemoryCache, ApolloProvider, useQuery, gql} from "@apollo/client";
 
-//graphql client
-//does not seem to be working, maybe address is wrong
-const client = new ApolloClient({
-  cache: new InMemoryCache(),
-  uri: "https://angular-test-backend-yc4c5cvnnq-an.a.run.app/graphiql"
-});
-
-//constant containing code for the fetchlatestmessages query
-const GET_LATEST = gql`
-  query GetLatest($channelId: String!) {
-    fetchLatestMessages(channelId: $channelId) {
-      messageId
-      text
-      datetime
-      userId
-    }
-  }
-`;
-
-function FetchLatest() {
-  const { loading, error, data } = useQuery(GET_LATEST, {
-    variables: { channelId:"1" },
-  });
-  if (loading) return <p>Loading ...</p>;
-  if (error) return `Error! ${error.message}`;
-  return data.fetchLatestMessages.map(({ messageId, text, datetime, userId }) => (
-    <div key={messageId}>
-        <div className="userId">{userId}</div>
-        <div className="text">{text}</div>
-        <div className="datetime">{datetime}</div>
-    </div>
-  ));
-}
-
-//debug function while waiting to fix address problem
-function FetchDummy() {
-  return (
-    <div key={"message1"}>
-        <div className="userId">{"user1"}</div>
-        <div className="text">{"Bonjour"}</div>
-        <div className="datetime">{"2021-08-11T13:47:51.807Z"}</div>
-    </div>
-  );
-}
-
+//---------------------------DRAFT COMPONENTS------------------------------
 //simple message element
 function MessageBox(props) {
   return (
@@ -81,7 +37,7 @@ class MessageContainer extends React.Component {
 
   render () {
       return (
-        //we want to print 10 messages at a time
+        //we want to display 10 messages at a time
         // (future improvement: change number dynamically with window size)
           <div className="chat-box">
               {this.renderBox(0)}
@@ -98,6 +54,68 @@ class MessageContainer extends React.Component {
       );
   }
 }
+//----------------END OF DRAFT-----------------------
+
+
+//graphql client
+//does not seem to be working, maybe address is wrong
+const client = new ApolloClient({
+  cache: new InMemoryCache(),
+  uri: "https://angular-test-backend-yc4c5cvnnq-an.a.run.app/graphiql"
+});
+
+//constant containing code for the fetchlatestmessages query
+const GET_LATEST = gql`
+  query GetLatest($channelId: String!) {
+    fetchLatestMessages(channelId: $channelId) {
+      messageId
+      text
+      datetime
+      userId
+    }
+  }
+`;
+
+function FetchLatest({channelId}) {
+  const { loading, error, data } = useQuery(GET_LATEST, {
+    variables: {channelId},
+  });
+  if (loading) return <p>Loading ...</p>;
+  if (error) return `Error! ${error.message}`;
+
+  const result = data.fetchLatestMessages.map(({ messageId, text, datetime, userId }) => {
+    return (
+    <div key={messageId}>
+        <div className="userId">{userId}</div>
+        <div className="text">{text}</div>
+        <div className="datetime">{datetime}</div>
+    </div>
+    );
+  });
+
+  return (
+    <div>{result}</div>
+  );
+}
+
+//debug function while waiting to fix address problem
+function FetchDummy({channelId}) {
+  return (
+    <div>
+      <div key={"message1"}>
+          <div className="userId">{"user1"}</div>
+          <div className="text">{"Bonjour"}</div>
+          <div className="datetime">{"2021-08-11T13:47:51.807Z"}</div>
+      </div>
+      <div key={"message2"}>
+        <div className="userId">{"user2"}</div>
+        <div className="text">{"Hola"}</div>
+        <div className="datetime">{"2021-08-12T06:47:51.807Z"}</div>
+      </div>
+    </div>
+  );
+}
+
 
 //general container with:
 //one column for user and channel selection
@@ -106,26 +124,40 @@ class Container extends React.Component {
   constructor(props) {
       super(props);
       this.state = {
-          messages: Array(10).fill(null)
+          messages: Array(10).fill(null),
+          currentUser: 1,
+          currentChannelId: 1
       };
   }
+  handleClickChannel(i) {
+    this.setState({
+      currentChannelId: i
+    })
+  }
+
   render() {
       return (
           <div className="content-wrapper">
-              <div className="user-container">
-
-              </div>
-              <div className="message-container">
+              <td className="user-container">
+                <div>{"1. Choose your user:"}</div>
+                <div>
+                  {"2. Choose your channel:"}<br />
+                  <button onClick={() => this.handleClickChannel(1)}>{"Channel 1"}</button><br />
+                  <button onClick={() => this.handleClickChannel(2)}>{"Channel 2"}</button><br />
+                  <button onClick={() => this.handleClickChannel(3)}>{"Channel 3"}</button><br />
+                </div>
+              </td>
+              <td className="message-container">
                   <button className="readMoreUp">
                       {"Read more"}
-                  </button>
-                  <MessageContainer
-                      
-                  />
+                  </button><br />
+                  <FetchLatest
+                    channelId={this.state.currentChannelId}
+                  /><br />
                   <button className="readMoreDown">
                       {"Read more"}
-                  </button>
-              </div>
+                  </button><br />
+              </td>
           </div>
       );
   }
@@ -137,7 +169,7 @@ class Container extends React.Component {
 ReactDOM.render(
   <React.StrictMode>
     <ApolloProvider client={client}>
-      <FetchDummy />
+      <Container />
     </ApolloProvider>,
   </React.StrictMode>,
   document.getElementById('root')
