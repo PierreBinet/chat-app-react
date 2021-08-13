@@ -4,14 +4,13 @@ import './index.css';
 import reportWebVitals from './reportWebVitals';
 import {ApolloClient, InMemoryCache, ApolloProvider, useQuery, gql} from "@apollo/client";
 
-//---------------------------DRAFT COMPONENTS------------------------------
 //simple message element
 function MessageBox(props) {
   return (
       <div classname={props.side}>
-          <div classname="userName">{props.user}</div>
-          <div classname="chatText">{props.text}</div>
-          <div classname="time">{props.time}</div>
+          <div classname="userName">{props.message.user}</div>
+          <div classname="chatText">{props.message.text}</div>
+          <div classname="time">{props.message.time}</div>
       </div>
   )
 }
@@ -19,18 +18,18 @@ function MessageBox(props) {
 //intermediate container with currently dispayed messages
 class MessageContainer extends React.Component {
   renderBox(i) {
+
       let side; //logic for message placement (left or right)
-      if (this.props.messageUser[i] === this.props.sessionUser) {
-          side="chat-right"
-      } else {
-          side="chat-left"
-      }
+      //if (this.props.messages[i].user === this.props.sessionUser) {
+      //    side="chat-right"
+      //} else {
+      //    side="chat-left"
+      //}
+
       return (
           <MessageBox
-          text={this.props.text[i]}
-          user={this.props.messageUser[i]}
-          side={side}
-          time={this.props.time[i]}
+            message={this.props.messages[i]}
+            side={this.props.side}
           />
       )
   }
@@ -54,7 +53,6 @@ class MessageContainer extends React.Component {
       );
   }
 }
-//----------------END OF DRAFT-----------------------
 
 
 //graphql client
@@ -68,6 +66,17 @@ const client = new ApolloClient({
 const GET_LATEST = gql`
   query GetLatest($channelId: String!) {
     fetchLatestMessages(channelId: $channelId) {
+      messageId
+      text
+      datetime
+      userId
+    }
+  }
+`;
+
+const GET_NEWER = gql`
+  query GetNewer($channelId: String!, $messageId: String!){
+    fetchMoreMessages(channelId: $channelId, messageId: $messageId) {
       messageId
       text
       datetime
@@ -126,7 +135,8 @@ class Container extends React.Component {
       this.state = {
           messages: Array(10).fill(null),
           currentUser: 1,
-          currentChannelId: 1
+          currentChannelId: 1,
+          currentMessage: null
       };
   }
   handleClickChannel(i) {
@@ -136,6 +146,9 @@ class Container extends React.Component {
   }
 
   render() {
+    //this.setState({
+      //messages: {FetchDummy(channelId={this.props.currentChannelId}))}
+    //})
       return (
           <div className="content-wrapper">
               <td className="user-container">
@@ -148,12 +161,11 @@ class Container extends React.Component {
                 </div>
               </td>
               <td className="message-container">
-                  <button className="readMoreUp">
+                  <button className="readMoreUp" onClick={() => this.handleClickMoreUp(this.state.currentMessage)}>
                       {"Read more"}
                   </button><br />
-                  <FetchLatest
-                    channelId={this.state.currentChannelId}
-                  /><br />
+                  <FetchLatest channelId={this.state.currentChannelId}/><br />
+                  
                   <button className="readMoreDown">
                       {"Read more"}
                   </button><br />
@@ -163,7 +175,11 @@ class Container extends React.Component {
   }
 }
 
-
+//----- TO DO : DEBUG -------
+//<MessageContainer
+//squares={this.state.messages}
+//sessionUser={this.state.currentUser}
+///>
 
 
 ReactDOM.render(
